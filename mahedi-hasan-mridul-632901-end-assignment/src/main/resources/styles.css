@@ -1,0 +1,61 @@
+/* styles.css */
+
+body {
+    background-color: #000;
+    -fx-text-fill: white;
+    -fx-font-family: sans-serif;
+}
+
+.login-container {
+    -fx-pref-width: 300px;
+    -fx-margin: 0 auto;
+    -fx-padding: 20px;
+    -fx-background-color: #fff;
+    -fx-border: 1px solid #ccc;
+    -fx-border-radius: 5px;
+}
+
+.login-label {
+    -fx-font-weight: bold;
+    -fx-margin-bottom: 10px;
+}
+
+.login-input {
+    -fx-pref-width: 100%;
+    -fx-pref-height: 30px;
+    -fx-padding: 10px;
+    -fx-margin-bottom: 10px;
+    -fx-border: 1px solid #ccc;
+    -fx-border-radius: 5px;
+}
+
+.login-button {
+    -fx-background-color: #8a3030;
+    -fx-text-fill: #ffffff;
+    -fx-pref-width: 100px;
+    -fx-pref-height: 30px;
+    -fx-border: 1px solid #ffffff;
+    -fx-border-radius: 5px;
+}
+
+/* Apply background color to the side menu */
+.side-menu {
+    -fx-background-color: #8a3030;
+}
+
+/* Apply styles to the menu buttons */
+.side-menu Button {
+    -fx-background-color: #8a3030;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 5 10 5 10;
+
+    /* Add a box shadow */
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 10, 0, 0, 1);
+}
+
+/* Remove the focus indicator by setting focus color to transparent */
+.side-menu Button:focus {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
