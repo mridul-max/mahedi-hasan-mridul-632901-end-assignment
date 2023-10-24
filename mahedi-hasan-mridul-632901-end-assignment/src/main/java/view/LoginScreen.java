@@ -8,6 +8,7 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import controller.LoginController;
 import database.Data;
+import model.Person;
 
 public class LoginScreen extends Application {
 
@@ -16,6 +17,7 @@ public class LoginScreen extends Application {
     private Label usernameLabel;
     private TextField usernameField;
     private Label passwordLabel;
+    private Label errorLabel;
     private PasswordField passwordField;
     private Button loginButton;
     private GridPane layout;
@@ -59,6 +61,10 @@ public class LoginScreen extends Application {
         loginButton = new Button("Login");
         loginButton.getStyleClass().add("login-button");
 
+        // Create the error label for displaying error messages
+        errorLabel = new Label();
+        errorLabel.getStyleClass().add("error-label");
+
         // Add the controls to a GridPane layout
         layout = new GridPane();
         layout.add(usernameLabel, 0, 0);
@@ -66,7 +72,7 @@ public class LoginScreen extends Application {
         layout.add(passwordLabel, 0, 1);
         layout.add(passwordField, 1, 1);
         layout.add(loginButton, 1, 2);
-
+        layout.add(errorLabel, 1, 3);
         // Create the scene
         scene = new Scene(layout);
 
@@ -95,27 +101,26 @@ public class LoginScreen extends Application {
         });
     }
 
-    private void handleLogin() throws Exception {
+    public void handleLogin() throws Exception {
         String username = usernameField.getText();
         String password = passwordField.getText();
 
         // Use the LoginController to validate the login
-        boolean loginSuccessful = loginController.login(username, password);
+        Person loggedInPerson = loginController.login(username, password);
 
-        if (loginSuccessful) {
-            // If login is successful, show the main window
-            showMainWindow();
+        if (loggedInPerson != null) {
+            // If login is successful, show the main window with the logged-in Person
+            showMainWindow(loggedInPerson);
         } else {
-            // Display an error message
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setContentText("Invalid username/password combination");
-            alert.show();
+            // Display an error message in the error label
+            errorLabel.setText("Invalid username/password combination");
         }
     }
 
-    public void showMainWindow() throws Exception {
+
+    public void showMainWindow(Person loggedInPerson) throws Exception {
         // Create the main window
-        MainWindow mainWindow = new MainWindow();
+        MainWindow mainWindow = new MainWindow(loggedInPerson);
         mainWindow.start(stage);
     }
 

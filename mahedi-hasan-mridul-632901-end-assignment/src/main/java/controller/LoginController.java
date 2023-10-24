@@ -11,19 +11,19 @@ public class LoginController {
         this.data = data;
     }
 
-    public Boolean login(String username, String password) {
+    public Person login(String username, String password) {
         // Check if the user exists in the database.
         Person person = data.findPersonByUsername(username);
-        // If the user does not exist, return an error.
+        // If the user does not exist, return null.
         if (person == null) {
-            return false;
+            return null;
         }
-
         // Verify the password.
         if (!person.getPassword().equals(password)) {
-            return false;
+            return null;
         }
-        return true;
+        // Return the Person object if the login is successful.
+        return person;
     }
 }
 

@@ -37,6 +37,12 @@ body {
     -fx-border: 1px solid #ffffff;
     -fx-border-radius: 5px;
 }
+/* Add style for the error label */
+.error-label {
+    -fx-text-fill: #771b1b;
+    -fx-padding: 5 0 0 0; /* Add padding to separate the error message from other elements */
+}
+
 
 /* Apply background color to the side menu */
 .side-menu {
