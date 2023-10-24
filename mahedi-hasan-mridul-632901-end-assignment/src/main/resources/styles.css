@@ -65,3 +65,11 @@ body {
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
 }
+/* styles.css */
+.title-label {
+    -fx-font-size: 20px;
+}
+
+.subtitle-label {
+    -fx-font-size: 16px;
+}
