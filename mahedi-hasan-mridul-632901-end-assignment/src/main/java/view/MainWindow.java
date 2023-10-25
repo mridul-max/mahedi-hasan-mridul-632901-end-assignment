@@ -1,6 +1,10 @@
 package view;
 
+import controller.ProductController;
 import javafx.application.Application;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -9,11 +13,13 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import model.Person;
+import model.Product;
 import model.ProductOrder;
 import model.Role;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 public class MainWindow extends Application {
 
@@ -22,9 +28,12 @@ public class MainWindow extends Application {
     private VBox sideMenu;
     private StackPane contentArea;
     private Person loggedInPerson;
-
-    public MainWindow(Person loggedInPerson) {
+    private ProductController productController;
+    private Label errorMessageLabel;
+    TableView<Product> productInventoryTable = new TableView<>();
+    public MainWindow(Person loggedInPerson, ProductController productController) {
         this.loggedInPerson = loggedInPerson;
+        this.productController = productController;
     }
 
     @Override
@@ -72,7 +81,10 @@ public class MainWindow extends Application {
             displayDashboard();
         } else if ("Create Order Content".equals(content) && loggedInPerson.getRole() == Role.SALESPERSON) {
             displayCreateOrder();
-        } else {
+        } else if ("Product Inventory Content".equals(content) && loggedInPerson.getRole() == Role.Manager) {
+            displayProductInventory();
+        }
+        else {
             Label label = new Label(content);
             contentArea.getChildren().add(label);
         }
@@ -166,8 +178,91 @@ public class MainWindow extends Application {
         return productOrderTable;
     }
 
+    private void displayProductInventory() {
+        VBox productInventoryContent = new VBox(10);
+
+        // Create the product inventory table
+        TableView<Product> productInventoryTable = createProductInventoryTable();
+
+        // Create buttons for adding, editing, and deleting products
+        HBox buttonContainer = createButtonContainer();
+
+        // Create the error message label
+        errorMessageLabel = new Label("Please select a product to delete.");
+        errorMessageLabel.getStyleClass().add("error-label");
+        errorMessageLabel.setVisible(false);
+        // Add components to the content
+        productInventoryContent.getChildren().addAll(productInventoryTable, buttonContainer,errorMessageLabel);
+        productInventoryContent.setAlignment(Pos.CENTER);
+
+        contentArea.getChildren().add(productInventoryContent);
+    }
+
+    private TableView<Product> createProductInventoryTable() {
+        TableColumn<Product, Integer> stockLevelCol = new TableColumn<>("Stock");
+        TableColumn<Product, String> nameCol = new TableColumn<>("Name");
+        TableColumn<Product, String> categoryCol = new TableColumn<>("Category");
+        TableColumn<Product, Double> priceCol = new TableColumn<>("Price");
+        TableColumn<Product, String> descriptionCol = new TableColumn<>("Description");
+
+        List<Product> products = productController.loadProducts();
+        productInventoryTable.getItems().addAll(products);
+
+        stockLevelCol.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getStockQuantity()).asObject());
+        nameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
+        categoryCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getCategory()));
+        priceCol.setCellValueFactory(cellData -> new SimpleDoubleProperty(cellData.getValue().getPrice()).asObject());
+        descriptionCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDescription()));
+
+        productInventoryTable.getColumns().addAll(nameCol, categoryCol, priceCol, stockLevelCol);
+
+        return productInventoryTable;
+    }
+
+    private HBox createButtonContainer() {
+        Button addProductButton = new Button("Add Product");
+        addProductButton.setOnAction(event -> handleAddProductButtonClick());
+
+        Button editProductButton = new Button("Edit Product");
+        editProductButton.setOnAction(event -> handleEditProductButtonClick());
+
+        Button deleteProductButton = new Button("Delete Product");
+        deleteProductButton.setOnAction(event -> handleDeleteProductButtonClick());
+
+        HBox buttonContainer = new HBox(10); // Horizontal container
+        buttonContainer.getChildren().addAll(addProductButton, editProductButton, deleteProductButton);
+
+        return buttonContainer;
+    }
+    private void handleAddProductButtonClick() {
+        // Implement the logic for adding a product
+    }
+
+    private void handleEditProductButtonClick() {
+        // Implement the logic for editing a product
+    }
+
+    private void handleDeleteProductButtonClick() {
+        // Obtain the selected product from the TableView
+        Product selectedProduct = productInventoryTable.getSelectionModel().getSelectedItem();
+
+        if (selectedProduct != null) {
+            // A product is selected, proceed with deletion.
+            int selectedProductId = selectedProduct.getId();
+            productController.deleteProduct(selectedProductId);
+
+            // Remove the selected product from the TableView.
+            productInventoryTable.getItems().remove(selectedProduct);
+            // Hide the error message label (if it was visible)
+            errorMessageLabel.setVisible(false);
+        } else {
+            // Show the error message since no product is selected
+            errorMessageLabel.setVisible(true);
+        }
+    }
 
     public static void main(String[] args) {
         launch(args);
     }
+
 }

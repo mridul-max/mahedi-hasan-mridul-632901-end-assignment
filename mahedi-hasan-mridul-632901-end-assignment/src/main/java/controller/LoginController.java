@@ -6,7 +6,6 @@ import model.Person;
 public class LoginController {
 
     private Data data;
-
     public LoginController(Data data) {
         this.data = data;
     }

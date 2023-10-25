@@ -73,3 +73,8 @@ body {
 .subtitle-label {
     -fx-font-size: 16px;
 }
+.error-label {
+    -fx-text-fill: red;
+    -fx-font-weight: bold;
+}
+
