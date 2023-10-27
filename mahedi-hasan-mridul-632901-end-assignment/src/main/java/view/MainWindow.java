@@ -2,14 +2,11 @@ package view;
 
 import controller.ProductController;
 import javafx.application.Application;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -37,6 +34,8 @@ public class MainWindow extends Application {
     private ProductController productController;
     private Label errorMessageLabel;
     private TableView<Product> productInventoryTable = new TableView<>();
+    private TableView<ProductOrder> productOrderTable;
+    private ObservableList<ProductOrder> selectedProducts = FXCollections.observableArrayList();
     private ObservableList<Product> products = FXCollections.observableArrayList(); // Observable list for products
 
     public MainWindow(Person loggedInPerson, ProductController productController) {
@@ -169,19 +168,19 @@ public class MainWindow extends Application {
     }
 
     private VBox createProductOrderTable() {
-        TableView<ProductOrder> productOrderTable = new TableView<>();
-        TableColumn<ProductOrder, Integer> productQuantityCol = new TableColumn<>("Quantity");
-        productQuantityCol.setCellValueFactory(new PropertyValueFactory<>("productQuantity"));
+        productOrderTable = new TableView<>();
 
         TableColumn<ProductOrder, String> productNameCol = new TableColumn<>("Name");
-        productNameCol.setCellValueFactory(new PropertyValueFactory<>("productName"));
+        productNameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getProductName()));
 
         TableColumn<ProductOrder, String> productCategoryCol = new TableColumn<>("Category");
-        productCategoryCol.setCellValueFactory(new PropertyValueFactory<>("productCategory"));
+        productCategoryCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getCategory()));
 
         TableColumn<ProductOrder, Double> productPriceCol = new TableColumn<>("Price");
-        productPriceCol.setCellValueFactory(new PropertyValueFactory<>("productPrice"));
+        productPriceCol.setCellValueFactory(cellData -> new SimpleDoubleProperty(cellData.getValue().getTotalPrice()).asObject());
 
+        TableColumn<ProductOrder, Integer> productQuantityCol = new TableColumn<>("Quantity");
+        productQuantityCol.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getQuantity()).asObject());
         productOrderTable.getColumns().addAll(productQuantityCol, productNameCol, productCategoryCol, productPriceCol);
 
         Button addProductButton = new Button("Add Product");
@@ -202,10 +201,117 @@ public class MainWindow extends Application {
         return productOrderLayout;
     }
 
-    // Implement action handlers for the buttons
     private void handleAddProduct() {
-        // Implement the logic for adding a product
+        TextField quantityField = createQuantityTextField();
+        Dialog<Product> dialog = createProductSelectionDialog(quantityField);
+        Optional<Product> result = dialog.showAndWait();
+        result.ifPresent(selectedProduct -> {
+            int quantity = getSelectedQuantity(quantityField);
+            ProductOrder productOrder = new ProductOrder(
+                    selectedProduct.getName(),
+                    selectedProduct.getCategory(),
+                    selectedProduct.getPrice(),
+                    quantity
+            );
+            productOrder.setQuantity(quantity);
+            selectedProducts.add(productOrder);
+            productOrderTable.setItems(selectedProducts);
+        });
     }
+
+
+
+    private Dialog<Product> createProductSelectionDialog(TextField quantityField) {
+        Dialog<Product> dialog = new Dialog<>();
+        dialog.setTitle("Select Product");
+        dialog.setHeaderText("Select a product to add to the order");
+
+        ButtonType addButton = new ButtonType("Add to Order", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(addButton, ButtonType.CANCEL);
+
+        GridPane grid = createDialogGrid(quantityField);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == addButton) {
+                Product selectedProduct = getSelectedProduct(grid);
+                if (selectedProduct != null) {
+                    return selectedProduct;
+                }
+            }
+            return null;
+        });
+
+        dialog.getDialogPane().setContent(grid);
+        return dialog;
+    }
+    private GridPane createDialogGrid(TextField quantityField) {
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+
+        TableView<Product> productTable = createProductTableView();
+
+        grid.add(new Label("Select a product:"), 0, 0);
+        grid.add(productTable, 0, 1, 2, 1);
+        grid.add(new Label("Quantity:"), 0, 2);
+        grid.add(quantityField, 1, 2);
+
+        return grid;
+    }
+
+
+    private Product getSelectedProduct(GridPane grid) {
+        TableView<Product> productTable = (TableView<Product>) grid.getChildren().get(1);
+        return productTable.getSelectionModel().getSelectedItem();
+    }
+
+    private TextField createQuantityTextField() {
+        TextField quantityField = new TextField();
+        quantityField.setPromptText("Quantity");
+        return quantityField;
+    }
+
+    private int getSelectedQuantity(TextField quantityField) {
+        try {
+            String input = quantityField.getText();
+            return Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            // Handle the case where the input is not a valid integer
+            return 0; // You can return a default value or show an error message
+        }
+    }
+
+
+    private TableView<Product> createProductTableView() {
+        // Create a TableView for displaying available products
+        TableView<Product> productTable = new TableView<>();
+
+        // Define the table columns
+        TableColumn<Product, Integer> stockLevelCol = new TableColumn<>("Stock");
+        stockLevelCol.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getStockQuantity()).asObject());
+
+        TableColumn<Product, String> nameCol = new TableColumn<>("Name");
+        nameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
+
+        TableColumn<Product, String> categoryCol = new TableColumn<>("Category");
+        categoryCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getCategory()));
+
+        TableColumn<Product, Double> priceCol = new TableColumn<>("Price");
+        priceCol.setCellValueFactory(cellData -> new SimpleDoubleProperty(cellData.getValue().getPrice()).asObject());
+
+        TableColumn<Product, String> descriptionCol = new TableColumn<>("Description");
+        descriptionCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDescription()));
+
+        // Set the items of the table to the available products
+        productTable.setItems(productController.loadProducts()); // Use your available products list
+
+        // Add the columns to the table
+        productTable.getColumns().addAll(stockLevelCol, nameCol, categoryCol, priceCol, descriptionCol);
+
+        return productTable;
+    }
+
+
 
     private void handleDeleteProduct() {
         // Implement the logic for deleting a product

@@ -1,26 +1,29 @@
 package model;
 
 public class ProductOrder {
-    private String productName;
+    private String name;
     private String category;
     private double price;
-    private int quantity;
+    private int stock;
 
-    public ProductOrder(String productName, String category, double price, int quantity) {
-        this.productName = productName;
+
+    private double totalPrice;
+
+    public ProductOrder(String name, String category, double price, int stock) {
+        this.name = name;
         this.category = category;
         this.price = price;
-        this.quantity = quantity;
+        this.stock = stock;
     }
 
     // Getters and setters for the fields
 
     public String getProductName() {
-        return productName;
+        return name;
     }
 
     public void setProductName(String productName) {
-        this.productName = productName;
+        this.name = productName;
     }
 
     public String getCategory() {
@@ -31,19 +34,25 @@ public class ProductOrder {
         this.category = category;
     }
 
-    public double getPrice() {
-        return price;
-    }
-
     public void setPrice(double price) {
         this.price = price;
+        calculateTotalPrice();
     }
 
     public int getQuantity() {
-        return quantity;
+        return stock;
     }
 
     public void setQuantity(int quantity) {
-        this.quantity = quantity;
+        this.stock = quantity;
+        calculateTotalPrice();
+    }
+
+    public double getTotalPrice() {
+        return totalPrice;
+    }
+
+    private void calculateTotalPrice() {
+        totalPrice = price * stock;
     }
 }
