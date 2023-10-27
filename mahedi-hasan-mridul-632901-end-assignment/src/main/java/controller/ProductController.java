@@ -26,5 +26,9 @@ public class ProductController {
         // Remove the product from your data source (e.g., database or list)
         data.deleteProduct(productId);
     }
+    public void deleteProductOrder(int productId) {
+        // Remove the product from your data source (e.g., database or list)
+        data.deleteProduct(productId);
+    }
 
 }

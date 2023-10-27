@@ -2,6 +2,7 @@ package database;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import model.Order;
 import model.Person;
 import model.Product;
 import model.Role;
@@ -12,7 +13,9 @@ import java.util.List;
 public class Data {
     private List<Person> persons = new ArrayList<>();
     private ObservableList<Product> products = FXCollections.observableArrayList();
+    private ObservableList<Order> orders = FXCollections.observableArrayList();
     private int lastProductId = 0;
+    private int lastOrderId = 0;
     public Data() {
         // Add some sample users to the database
         persons.add(new Person("1", "Wim", "Wiltenburg","john@example.com", "1234567890", Role.SALESPERSON, "wim", "wim"));
@@ -59,6 +62,15 @@ public class Data {
 
         // Add the product to the list
         products.add(product);
+    }
+    public ObservableList<Order> getOrders() {
+        return orders;
+    }
+
+    public void addOrder(Order order) {
+        int nextOrderId = ++lastOrderId;
+        order.setOrderId(nextOrderId);
+        orders.add(order);
     }
 
 }

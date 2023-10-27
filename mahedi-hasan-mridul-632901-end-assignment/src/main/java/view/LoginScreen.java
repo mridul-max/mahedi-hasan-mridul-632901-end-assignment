@@ -1,5 +1,6 @@
 package view;
 
+import controller.OrderController;
 import controller.ProductController;
 import javafx.application.Application;
 import javafx.geometry.Pos;
@@ -24,12 +25,14 @@ public class LoginScreen extends Application {
     private GridPane layout;
     private LoginController loginController;
     private ProductController  productController;
+    private OrderController orderController;
 
     public LoginScreen() {
         // Initialize the Data and LoginController
         Data data = new Data(); // You should create a Data class with appropriate methods.
         loginController = new LoginController(data);
         productController = new ProductController(data);
+        orderController = new OrderController(data);
     }
 
     @Override
@@ -123,7 +126,7 @@ public class LoginScreen extends Application {
 
     public void showMainWindow(Person loggedInPerson) throws Exception {
         // Create the main window
-        MainWindow mainWindow = new MainWindow(loggedInPerson,productController);
+        MainWindow mainWindow = new MainWindow(loggedInPerson,productController,orderController);
         mainWindow.start(stage);
     }
 

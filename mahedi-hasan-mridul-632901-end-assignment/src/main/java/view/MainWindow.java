@@ -1,5 +1,6 @@
 package view;
 
+import controller.OrderController;
 import controller.ProductController;
 import javafx.application.Application;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -10,13 +11,9 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
-import model.Person;
-import model.Product;
-import model.ProductOrder;
-import model.Role;
+import model.*;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -32,15 +29,22 @@ public class MainWindow extends Application {
     private StackPane contentArea;
     private Person loggedInPerson;
     private ProductController productController;
+    private OrderController orderController;
+    private TextField customerFirstNameTextField;
+    private TextField customerLastNameTextField;
+    private TextField customerEmailTextField;
+    private TextField customerPhoneNumberTextField;
+
     private Label errorMessageLabel;
     private TableView<Product> productInventoryTable = new TableView<>();
     private TableView<ProductOrder> productOrderTable;
     private ObservableList<ProductOrder> selectedProducts = FXCollections.observableArrayList();
     private ObservableList<Product> products = FXCollections.observableArrayList(); // Observable list for products
 
-    public MainWindow(Person loggedInPerson, ProductController productController) {
+    public MainWindow(Person loggedInPerson, ProductController productController, OrderController orderController) {
         this.loggedInPerson = loggedInPerson;
         this.productController = productController;
+        this.orderController = orderController;
     }
 
     @Override
@@ -148,10 +152,10 @@ public class MainWindow extends Application {
         Label customerEmailLabel = new Label("Email Address:");
         Label customerPhoneNumberLabel = new Label("Phone Number:");
 
-        TextField customerFirstNameTextField = new TextField("First Name");
-        TextField customerLastNameTextField = new TextField("Last Name");
-        TextField customerEmailTextField = new TextField("E-mail address");
-        TextField customerPhoneNumberTextField = new TextField("Phone Number");
+        customerFirstNameTextField = new TextField();
+        customerLastNameTextField = new TextField();
+        customerEmailTextField = new TextField();
+        customerPhoneNumberTextField = new TextField();
 
         customerInformationSection.add(title, 0, 0, 2, 1);
         customerInformationSection.add(subtitle, 0, 1, 2, 1);
@@ -314,12 +318,37 @@ public class MainWindow extends Application {
 
 
     private void handleDeleteProduct() {
-        // Implement the logic for deleting a product
+        // Get the selected row from the TableView
+        int selectedIndex = productOrderTable.getSelectionModel().getSelectedIndex();
+
+        if (selectedIndex >= 0) {
+            // Remove the selected product from the TableView
+            productOrderTable.getItems().remove(selectedIndex);
+        } else {
+           showErrorMessage("please select the product if you not gonna buy");
+        }
     }
 
     private void handleCreateOrder() {
-        // Implement the logic for creating an order
+        // Collect customer information
+        String customerFirstName = customerFirstNameTextField.getText();
+        String customerLastName = customerLastNameTextField.getText();
+        String customerEmail = customerEmailTextField.getText();
+        String customerPhoneNumber = customerPhoneNumberTextField.getText();
+
+        // Create a new Order instance
+        Order order = new Order();
+        order.setCustomerFirstName(customerFirstName);
+        order.setCustomerLastName(customerLastName);
+        order.setCustomerEmail(customerEmail);
+        order.setCustomerPhoneNumber(customerPhoneNumber);
+        order.setProducts(productOrderTable.getItems()); // Assuming you have products in the TableView
+
+        // Set the creation date
+        order.setCreationTime(new Date()); // Current date and time
+        orderController.addOrder(order);
     }
+
 
     private void displayProductInventory() {
         contentArea.getChildren().clear();
@@ -460,8 +489,6 @@ public class MainWindow extends Application {
         textField.setPromptText(promptText);
         return textField;
     }
-
-
 
     private void showErrorMessage(String message) {
         errorMessageLabel.setText(message);
