@@ -1,6 +1,7 @@
 package controller;
 
 import database.Data;
+import javafx.collections.ObservableList;
 import model.Product;
 
 import java.util.List;
@@ -10,7 +11,7 @@ public class ProductController {
     public ProductController(Data data) {
         this.data = data;
     }
-    public List<Product> loadProducts() {
+    public ObservableList<Product> loadProducts() {
         return data.getProducts();
     }
     public void addProduct(Product product) {
