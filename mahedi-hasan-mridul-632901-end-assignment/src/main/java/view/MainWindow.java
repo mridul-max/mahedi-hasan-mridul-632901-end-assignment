@@ -94,7 +94,10 @@ public class MainWindow extends Application {
             displayCreateOrder();
         } else if ("Product Inventory Content".equals(content) && loggedInPerson.getRole() == Role.Manager) {
             displayProductInventory();
-        } else {
+        } else if("Order History Content".equals(content)){
+            displayOrderHistory();
+        }
+        else {
             Label label = new Label(content);
             contentArea.getChildren().add(label);
         }
@@ -614,6 +617,88 @@ public class MainWindow extends Application {
             errorMessageLabel.setVisible(true);
         }
     }
+    private void displayOrderHistory() {
+        // Create the main container for the Order History section
+        VBox orderHistoryContainer = new VBox(10);
+        orderHistoryContainer.getStyleClass().add("order-history-content");
+
+        // Create the title label for the Order History section
+        Label orderHistoryTitle = new Label("Order History");
+        orderHistoryTitle.getStyleClass().add("title-label");
+
+        // Create the TableView for displaying order history
+        TableView<Order> orderHistoryTable = createOrderHistoryTable();
+
+        // Create the title label for the Ordered Products section
+        Label orderedProductsTitle = new Label("Ordered Products");
+        orderedProductsTitle.getStyleClass().add("subtitle-label");
+
+        // Create the TableView for displaying ordered products
+        TableView<ProductOrder> orderedProductsTable = createOrderedProductsTable();
+
+        // Add components to the Order History container
+        orderHistoryContainer.getChildren().addAll(orderHistoryTitle, orderHistoryTable, orderedProductsTitle, orderedProductsTable);
+        orderHistoryContainer.setAlignment(Pos.CENTER);
+
+        // Set the Order History container as the content for the right region
+        contentArea.getChildren().clear();
+        contentArea.getChildren().add(orderHistoryContainer);
+    }
+
+    private TableView<Order> createOrderHistoryTable() {
+        // Create the TableView for displaying order history
+        TableView<Order> orderHistoryTable = new TableView<>();
+
+        // Define the table columns
+        TableColumn<Order, String> dateTimeCol = new TableColumn<>("Date/Time");
+        dateTimeCol.setCellValueFactory(cellData -> {
+            Date creationTime = cellData.getValue().getCreationTime();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String formattedDateTime = dateFormat.format(creationTime);
+            return new SimpleStringProperty(formattedDateTime);
+        });
+
+        TableColumn<Order, String> customerNameCol = new TableColumn<>("Name");
+        customerNameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getCustomerFirstName()));
+
+        TableColumn<Order, Double> totalPriceCol = new TableColumn<>("Total Price");
+        totalPriceCol.setCellValueFactory(cellData -> new SimpleDoubleProperty(cellData.getValue().calculateTotalPrice()).asObject());
+
+        // Set the items of the table to your list of orders
+        orderHistoryTable.setItems(orderController.getOrders()); // Replace with your order data source
+
+        // Add the columns to the table
+        orderHistoryTable.getColumns().addAll(dateTimeCol, customerNameCol, totalPriceCol);
+
+        return orderHistoryTable;
+    }
+
+    private TableView<ProductOrder> createOrderedProductsTable() {
+        // Create the TableView for displaying ordered products
+        TableView<ProductOrder> orderedProductsTable = new TableView<>();
+
+        // Define the table columns for ordered products
+        TableColumn<ProductOrder, Integer> quantityCol = new TableColumn<>("Quantity");
+        quantityCol.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getQuantity()).asObject());
+
+        TableColumn<ProductOrder, String> productNameCol = new TableColumn<>("Name");
+        productNameCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getProductName()));
+
+        TableColumn<ProductOrder, String> categoryCol = new TableColumn<>("Category");
+        categoryCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getCategory()));
+
+        TableColumn<ProductOrder, Double> priceCol = new TableColumn<>("Price");
+        priceCol.setCellValueFactory(cellData -> new SimpleDoubleProperty(cellData.getValue().getTotalPrice()).asObject());
+
+        // Set the items of the table to an empty list initially
+        orderedProductsTable.setItems(FXCollections.observableArrayList());
+
+        // Add the columns to the table
+        orderedProductsTable.getColumns().addAll(quantityCol, productNameCol, categoryCol, priceCol);
+
+        return orderedProductsTable;
+    }
+
 
     public static void main(String[] args) {
         launch(args);

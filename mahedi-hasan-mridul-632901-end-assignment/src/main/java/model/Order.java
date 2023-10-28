@@ -71,5 +71,12 @@ public class Order {
     public void setProducts(List<ProductOrder> products) {
         this.products = products;
     }
+    public double calculateTotalPrice() {
+        double totalPrice = 0.0;
+        for (ProductOrder product : products) {
+            totalPrice += product.getTotalPrice();
+        }
+        return totalPrice;
+    }
 
 }
