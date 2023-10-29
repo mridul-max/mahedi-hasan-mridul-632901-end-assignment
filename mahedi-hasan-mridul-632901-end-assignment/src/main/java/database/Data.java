@@ -7,16 +7,25 @@ import model.Person;
 import model.Product;
 import model.Role;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Data {
+public class Data implements Serializable {
     private List<Person> persons = new ArrayList<>();
     private ObservableList<Product> products = FXCollections.observableArrayList();
     private ObservableList<Order> orders = FXCollections.observableArrayList();
     private int lastProductId = 0;
     private int lastOrderId = 0;
-    public Data() {
+    private String dataFilePath = getClass().getClassLoader().getResource("data.dat").getFile();
+
+    public Data() throws FileNotFoundException {
+        loadFromSerializedFile(dataFilePath);
+        if (persons.isEmpty() && products.isEmpty()) {
+            initializeSampleData();
+        }
+    }
+    private void initializeSampleData() {
         // Add some sample users to the database
         persons.add(new Person("1", "Wim", "Wiltenburg","john@example.com", "1234567890", Role.SALESPERSON, "wim", "wim"));
         persons.add(new Person("2", "Jane", "Smith","jane@example.com", "9876543210", Role.Manager, "def", "def"));
@@ -72,5 +81,27 @@ public class Data {
         order.setOrderId(nextOrderId);
         orders.add(order);
     }
+    private void loadFromSerializedFile(String filename) {
+        try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(filename))) {
+            Data loadedData = (Data) inputStream.readObject();
+            persons = loadedData.persons;
+            products = loadedData.products;
+            orders = loadedData.orders;
+            lastProductId = loadedData.lastProductId;
+            lastOrderId = loadedData.lastOrderId;
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace(); // Handle the exception appropriately, e.g., log or display an error message.
+            // Fall back to initializing sample data
+            initializeSampleData();
+        }
+    }
+    public void saveToSerializedFile(String filename) throws IOException {
+        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(filename))) {
+            outputStream.writeObject(this);
+        }
+    }
 
+    public void saveDataToFileOnExit() throws IOException {
+        saveToSerializedFile(dataFilePath);
+    }
 }

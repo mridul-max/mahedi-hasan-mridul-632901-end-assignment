@@ -2,7 +2,9 @@ package view;
 
 import controller.OrderController;
 import controller.ProductController;
+import database.Data;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -13,8 +15,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import model.*;
 
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -34,14 +38,17 @@ public class MainWindow extends Application {
     private TextField customerLastNameTextField;
     private TextField customerEmailTextField;
     private TextField customerPhoneNumberTextField;
-
     private Label errorMessageLabel;
+    // Create the TableView for displaying ordered products
+    TableView<ProductOrder> orderedProductsTable = new TableView<>();
     private TableView<Product> productInventoryTable = new TableView<>();
     private TableView<ProductOrder> productOrderTable;
+    private Data data;
     private ObservableList<ProductOrder> selectedProducts = FXCollections.observableArrayList();
     private ObservableList<Product> products = FXCollections.observableArrayList(); // Observable list for products
 
-    public MainWindow(Person loggedInPerson, ProductController productController, OrderController orderController) {
+    public MainWindow(Person loggedInPerson, ProductController productController, OrderController orderController) throws FileNotFoundException {
+        data = new Data();
         this.loggedInPerson = loggedInPerson;
         this.productController = productController;
         this.orderController = orderController;
@@ -65,7 +72,15 @@ public class MainWindow extends Application {
         Scene scene = new Scene(mainLayout, 800, 600);
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
         stage.setScene(scene);
-
+        primaryStage.setOnCloseRequest((WindowEvent event) -> {
+            // Save data when the application is closing
+            try {
+                data.saveDataToFileOnExit();
+            } catch (IOException e) {
+                e.printStackTrace(); // Handle the exception appropriately, e.g., log the error.
+            }
+            Platform.exit();
+        });
         stage.show();
     }
 
@@ -646,9 +661,8 @@ public class MainWindow extends Application {
     }
 
     private TableView<Order> createOrderHistoryTable() {
-        // Create the TableView for displaying order history
-        TableView<Order> orderHistoryTable = new TableView<>();
 
+        TableView<Order> orderHistoryTable = new TableView<>();
         // Define the table columns
         TableColumn<Order, String> dateTimeCol = new TableColumn<>("Date/Time");
         dateTimeCol.setCellValueFactory(cellData -> {
@@ -669,13 +683,19 @@ public class MainWindow extends Application {
 
         // Add the columns to the table
         orderHistoryTable.getColumns().addAll(dateTimeCol, customerNameCol, totalPriceCol);
-
+        orderHistoryTable.setOnMouseClicked(event -> {
+            Order selectedOrder = orderHistoryTable.getSelectionModel().getSelectedItem();
+            if (selectedOrder != null) {
+                // Get the products associated with the selected order
+                List<ProductOrder> orderedProducts = selectedOrder.getProducts();
+                // Update the items of orderedProductsTable with the products from selected order
+                orderedProductsTable.setItems(FXCollections.observableArrayList(orderedProducts));
+            }
+        });
         return orderHistoryTable;
     }
 
     private TableView<ProductOrder> createOrderedProductsTable() {
-        // Create the TableView for displaying ordered products
-        TableView<ProductOrder> orderedProductsTable = new TableView<>();
 
         // Define the table columns for ordered products
         TableColumn<ProductOrder, Integer> quantityCol = new TableColumn<>("Quantity");
@@ -698,8 +718,6 @@ public class MainWindow extends Application {
 
         return orderedProductsTable;
     }
-
-
     public static void main(String[] args) {
         launch(args);
     }

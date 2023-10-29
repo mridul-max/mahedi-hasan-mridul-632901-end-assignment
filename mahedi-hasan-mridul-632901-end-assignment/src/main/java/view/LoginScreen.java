@@ -1,5 +1,4 @@
 package view;
-
 import controller.OrderController;
 import controller.ProductController;
 import javafx.application.Application;
@@ -11,6 +10,8 @@ import javafx.stage.Stage;
 import controller.LoginController;
 import database.Data;
 import model.Person;
+
+import java.io.FileNotFoundException;
 
 public class LoginScreen extends Application {
 
@@ -27,9 +28,9 @@ public class LoginScreen extends Application {
     private ProductController  productController;
     private OrderController orderController;
 
-    public LoginScreen() {
+    public LoginScreen() throws FileNotFoundException {
         // Initialize the Data and LoginController
-        Data data = new Data(); // You should create a Data class with appropriate methods.
+        Data data = new Data();
         loginController = new LoginController(data);
         productController = new ProductController(data);
         orderController = new OrderController(data);

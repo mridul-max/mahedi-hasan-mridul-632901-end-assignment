@@ -1,6 +1,8 @@
 package model;
 
-public class ProductOrder {
+import java.io.Serializable;
+
+public class ProductOrder implements Serializable {
     private String name;
     private String category;
     private double price;

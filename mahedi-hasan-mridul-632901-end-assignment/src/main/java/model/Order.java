@@ -1,11 +1,12 @@
 package model;
 import model.ProductOrder;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class Order {
+public class Order implements Serializable {
     private int orderId;
     private String customerFirstName;
     private String customerLastName;
