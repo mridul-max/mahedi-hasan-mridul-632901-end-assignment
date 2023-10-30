@@ -30,5 +30,8 @@ public class ProductController {
         // Remove the product from your data source (e.g., database or list)
         data.deleteProduct(productId);
     }
+    public void addProducts(List<Product> products){
+        data.addProducts(products);
+    }
 
 }

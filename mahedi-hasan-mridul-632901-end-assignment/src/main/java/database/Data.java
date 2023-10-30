@@ -104,4 +104,10 @@ public class Data implements Serializable {
     public void saveDataToFileOnExit() throws IOException {
         saveToSerializedFile(dataFilePath);
     }
+    public void addProducts(List<Product> products){
+        for (Product p:
+             products) {
+            addProduct(p);
+        }
+    }
 }

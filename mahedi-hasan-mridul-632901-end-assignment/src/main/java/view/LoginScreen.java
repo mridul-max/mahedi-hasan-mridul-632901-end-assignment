@@ -1,6 +1,7 @@
 package view;
 import controller.OrderController;
 import controller.ProductController;
+import exception.AccountLockedException;
 import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -27,6 +28,8 @@ public class LoginScreen extends Application {
     private LoginController loginController;
     private ProductController  productController;
     private OrderController orderController;
+    private int loginAttempts = 0;
+    private static final int MAX_LOGIN_ATTEMPTS = 3;
 
     public LoginScreen() throws FileNotFoundException {
         // Initialize the Data and LoginController
@@ -102,15 +105,21 @@ public class LoginScreen extends Application {
         loginButton.setOnAction(event -> {
             try {
                 handleLogin();
+            } catch (AccountLockedException e) {
+                displayAccountLockDialog();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
     }
 
-    public void handleLogin() throws Exception {
+    public void handleLogin() throws AccountLockedException, Exception {
         String username = usernameField.getText();
         String password = passwordField.getText();
+
+        if (loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+            throw new AccountLockedException("Account locked due to too many incorrect login attempts.");
+        }
 
         // Use the LoginController to validate the login
         Person loggedInPerson = loginController.login(username, password);
@@ -119,16 +128,28 @@ public class LoginScreen extends Application {
             // If login is successful, show the main window with the logged-in Person
             showMainWindow(loggedInPerson);
         } else {
-            // Display an error message in the error label
-            errorLabel.setText("Invalid username/password combination");
+            // Increment the login attempts and display an error message
+            loginAttempts++;
+            errorLabel.setText("Invalid username/password combination. Attempts left: " + (MAX_LOGIN_ATTEMPTS - loginAttempts));
         }
     }
 
-
     public void showMainWindow(Person loggedInPerson) throws Exception {
         // Create the main window
-        MainWindow mainWindow = new MainWindow(loggedInPerson,productController,orderController);
+        MainWindow mainWindow = new MainWindow(loggedInPerson, productController, orderController);
         mainWindow.start(stage);
+    }
+
+    private void displayAccountLockDialog() {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Account Locked");
+        alert.setHeaderText("Account Locked");
+        alert.setContentText("Your account has been locked due to too many incorrect login attempts.");
+        alert.getButtonTypes().setAll(ButtonType.OK);
+        alert.showAndWait();
+
+        // Close the application after displaying the alert
+        stage.close();
     }
 
     public static void main(String[] args) {

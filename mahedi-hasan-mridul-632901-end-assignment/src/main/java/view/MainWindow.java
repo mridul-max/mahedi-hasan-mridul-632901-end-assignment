@@ -10,20 +10,19 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import model.*;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class MainWindow extends Application {
 
@@ -39,10 +38,14 @@ public class MainWindow extends Application {
     private TextField customerEmailTextField;
     private TextField customerPhoneNumberTextField;
     private Label errorMessageLabel;
+    private TextField searchField = new TextField();
     // Create the TableView for displaying ordered products
     TableView<ProductOrder> orderedProductsTable = new TableView<>();
     private TableView<Product> productInventoryTable = new TableView<>();
     private TableView<ProductOrder> productOrderTable;
+    private FilteredList<Product> filteredProducts;
+    // Create a TableView for displaying available products
+    private TableView<Product> productTable = new TableView<>();
     private Data data;
     private ObservableList<ProductOrder> selectedProducts = FXCollections.observableArrayList();
     private ObservableList<Product> products = FXCollections.observableArrayList(); // Observable list for products
@@ -53,7 +56,6 @@ public class MainWindow extends Application {
         this.productController = productController;
         this.orderController = orderController;
     }
-
     @Override
     public void start(Stage primaryStage) {
         stage = primaryStage;
@@ -241,17 +243,28 @@ public class MainWindow extends Application {
         });
     }
 
-
-
     private Dialog<Product> createProductSelectionDialog(TextField quantityField) {
+        GridPane grid = createDialogGrid(quantityField);
+
+        // Initialize filteredProducts
+        filteredProducts = new FilteredList<>(productController.loadProducts(), p -> true);
+
+        // Create a VBox to hold the search field and the product list
+        VBox dialogContent = new VBox();
+        TextField searchField = new TextField(); // Create the search field
+        dialogContent.getChildren().addAll(searchField, grid); // Add searchField and grid to the VBox
+
+        // Attach a listener to the search field to update the product list
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filterProductList(newValue);
+        });
+
         Dialog<Product> dialog = new Dialog<>();
         dialog.setTitle("Select Product");
         dialog.setHeaderText("Select a product to add to the order");
 
         ButtonType addButton = new ButtonType("Add to Order", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(addButton, ButtonType.CANCEL);
-
-        GridPane grid = createDialogGrid(quantityField);
 
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == addButton) {
@@ -263,9 +276,26 @@ public class MainWindow extends Application {
             return null;
         });
 
-        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().setContent(dialogContent); // Set the content to dialogContent
         return dialog;
     }
+
+    private void filterProductList(String searchText) {
+        if (searchText.length() >= 3) {
+            filteredProducts.setPredicate(product -> {
+                String name = product.getName().toLowerCase();
+                return name.contains(searchText.toLowerCase());
+            });
+        } else {
+            // Reset the predicate to show all products when the search text is less than 3 characters
+            filteredProducts.setPredicate(product -> true);
+        }
+
+        // Set the items of the productTable to the filtered products
+        productTable.setItems(filteredProducts);
+    }
+
+
     private GridPane createDialogGrid(TextField quantityField) {
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -305,9 +335,6 @@ public class MainWindow extends Application {
 
 
     private TableView<Product> createProductTableView() {
-        // Create a TableView for displaying available products
-        TableView<Product> productTable = new TableView<>();
-
         // Define the table columns
         TableColumn<Product, Integer> stockLevelCol = new TableColumn<>("Stock");
         stockLevelCol.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getStockQuantity()).asObject());
@@ -388,8 +415,6 @@ public class MainWindow extends Application {
         VBox productInventoryContent = new VBox(10);
         productInventoryContent.getChildren().addAll(productInventoryTable, buttonContainer, errorMessageLabel);
         productInventoryContent.setAlignment(Pos.CENTER);
-
-
         contentArea.getChildren().add(productInventoryContent);
     }
 
@@ -404,7 +429,6 @@ public class MainWindow extends Application {
             // Populate the products list only if it's empty
             products.addAll(productController.loadProducts());
         }
-
         // Set the items of the productInventoryTable to the observable products list
         productInventoryTable.setItems(products);
 
@@ -429,11 +453,31 @@ public class MainWindow extends Application {
         Button deleteProductButton = new Button("Delete Product");
         deleteProductButton.setOnAction(event -> handleDeleteProductButtonClick());
 
+        Button importButton = new Button("Import Products");
+        importButton.setOnAction(event -> handleImportButtonClick());
+
         HBox buttonContainer = new HBox(10); // Horizontal container
-        buttonContainer.getChildren().addAll(addProductButton, editProductButton, deleteProductButton);
+        buttonContainer.getChildren().addAll(addProductButton, editProductButton, deleteProductButton, importButton);
 
         return buttonContainer;
     }
+    private void handleImportButtonClick() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+        File selectedFile = fileChooser.showOpenDialog(stage); // Use 'stage' here
+
+        if (selectedFile != null) {
+            try {
+                List<Product> importedProducts = readProductsFromCSV(selectedFile);
+                productController.addProducts(importedProducts);
+                products.addAll(importedProducts);
+                productInventoryTable.setItems(products);
+            } catch (IOException e) {
+                e.printStackTrace(); // Handle the exception appropriately, e.g., show an error message.
+            }
+        }
+    }
+
 
     private void handleAddProductButtonClick() {
         Dialog<Product> dialog = createProductDialog();
@@ -444,6 +488,33 @@ public class MainWindow extends Application {
     private void handleNewProductAddition(Product newProduct) {
         productController.addProduct(newProduct);
         products.add(newProduct);
+    }
+    private List<Product> readProductsFromCSV(File file) throws IOException {
+        List<Product> importedProducts = new ArrayList<>();
+
+        try (Scanner scanner = new Scanner(file)) {
+            // Skip the header row
+            if (scanner.hasNextLine()) {
+                scanner.nextLine();
+            }
+
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                String[] data = line.split(";");
+
+                if (data.length == 5) { // Check if there are 5 columns in the CSV
+                    String name = data[0];
+                    String category = data[1];
+                    double price = Double.parseDouble(data[2]);
+                    String description = data[3];
+                    int stockQuantity = Integer.parseInt(data[4]);
+                    Product product = new Product(1, stockQuantity, name, category, price, description);
+                    importedProducts.add(product);
+                }
+            }
+        }
+
+        return importedProducts;
     }
 
     private Dialog<Product> createProductDialog() {
@@ -500,14 +571,11 @@ public class MainWindow extends Application {
         newProduct.setDescription(fields.get(4).getText());
         return newProduct;
     }
-
-
     private TextField createTextField(String promptText) {
         TextField textField = new TextField();
         textField.setPromptText(promptText);
         return textField;
     }
-
     private void showErrorMessage(String message) {
         errorMessageLabel.setText(message);
         errorMessageLabel.setVisible(true);
